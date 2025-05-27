@@ -1,0 +1,99 @@
+{# Citations: #}
+{# Used GitHub Copilot with debugging process like: #}
+{# help fixing an errors in output, how to have edit be within the view table #}
+
+{% extends "base.html" %}
+
+{% block title %}SalesProducts{% endblock %}
+
+{% block content %}
+<h1>Sales Products List</h1>
+
+    <h2>Add a SaleProduct</h2>
+    <form class="cuForm" id="add_sale_product" method="POST" action="/sales_products">
+        <label>saleID: 
+            <select name="sale_id" required>
+                <option value="" disabled selected>Select a saleID</option>
+                {% for sale in sales %}
+                    <option value="{{ sale.saleID }}">{{ sale.saleID }}</option>
+                {% endfor %}
+            </select>
+        </label><br>
+        <label>productName: 
+            <select name="product_id" required>
+                <option value="" disabled selected>Select a Product</option>
+                {% for product in products %}
+                    <option value="{{ product.productID }}">{{ product.productName }}</option>
+                {% endfor %}
+            </select>
+        </label><br>
+        <label>quantity: <input type="number" name="quantity" required></label><br>
+        <label>unitPriceAtSale: <input type="number" name="unit_price_at_sale" required></label><br>
+        <button type="submit">Add SaleProduct</button>
+    </form>
+    <hr>
+
+    {# SELECT/UPDATE form #}
+    <table border="1">
+        <thead>
+            {% if sale_product %}
+            <tr>
+                <th>saleProductID</th>
+                <th>saleID</th>
+                <th>productName</th>
+                <th>quantity</th>
+                <th>unitPriceAtSale</th>
+                <th colspan="2">Actions</th> 
+            </tr>
+            {% endif %}
+        </thead>
+        <tbody>
+            {% for sale_product in sale_product %}
+                {% if sale_product.saleProductID == selected_sale_product.saleProductID %}
+                    <tr>
+                        <td>{{ sale_product.saleProductID }}</td> 
+                        <td>
+                            <select name="sale_id" form="update-form-{{ sale_product.saleProductID }}" required>
+                                {% for sale in sales %}
+                                    <option value="{{ sale.saleID }}" {% if sale.saleID == selected_sale_product.saleID %}selected{% endif %}>
+                                        {{ sale.saleID }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td>
+                            <select name="product_id" form="update-form-{{ sale_product.saleProductID }}" required>
+                                {% for product in products %}
+                                    <option value="{{ product.productID }}" {% if product.productID == selected_sale_product.productID %}selected{% endif %}>
+                                        {{ product.productName }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td><input type="number" name="quantity" form="update-form-{{ sale_product.saleProductID }}" value="{{ sale_product.quantity }}" required></td>
+                        <td><input type="number" name="unit_price_at_sale" form="update-form-{{ sale_product.saleProductID }}" value="{{ sale_product.unitPriceAtSale }}" required></td>
+                        <td>
+                            <form class="cuForm" id="update-form-{{ sale_product.saleProductID }}" method="POST" action="/update_sale_product/{{ sale_product.saleProductID }}">
+                                <button type="submit" onclick="return confirm('Are you sure you want to submit this sale_product?');">Submit</button>
+                            </form>
+                        </td>
+                        <td>
+                            <a href="/sales_products" style="margin-left: 10px;">Cancel</a>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td>{{ sale_product.saleProductID }}</td>
+                        <td>{{ sale_product.saleID }}</td>
+                        <td>{{ sale_product.productName }}</td>
+                        <td>{{ sale_product.quantity }}</td>
+                        <td>{{ sale_product.unitPriceAtSale }}</td>
+                        <td><a href="/update_sale_product/{{ sale_product.saleProductID }}">Edit</a></td>
+                        <td><a href="/delete_sale_product/{{ sale_product.saleProductID }}" onclick="return confirm('Are you sure you want to delete this saleproduct?');">Delete</a></td>
+                    </tr>
+                {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+{% endblock %}

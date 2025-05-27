@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Sales{% endblock %}
+
+{% block content %}
+<h1>Sales List</h1>
+
+ <!-- Add New Sale Form -->
+<h2>Add New Sale</h2>
+<form method="POST" action="/sales">
+    <label>Customer: 
+        <select name="customer_id" required>
+            <option value="" disabled selected>Select a customer</option>
+            {% for customer in customers %}
+                <option value="{{ customer.customerID }}">{{ customer.firstName }} {{ customer.lastName }}</option>
+            {% endfor %}
+        </select>
+    </label><br>
+    
+    <label>Employee: 
+        <select name="employee_id" required>
+            <option value="" disabled selected>Select an employee</option>
+            {% for employee in employees %}
+                <option value="{{ employee.employeeID }}">{{ employee.firstName }} {{ employee.lastName }}</option>
+            {% endfor %}
+        </select>
+    </label><br>
+    
+    <label>Sale Date: <input type="date" name="sale_date" required></label><br>
+    <label>Subtotal: <input type="number" step="0.01" name="subtotal" required></label><br>
+    <label>Discount: <input type="number" step="0.01" name="discount"></label><br>
+    <label>Tax: <input type="number" step="0.01" name="tax"></label><br>
+    <label>Total Amount: <input type="number" step="0.01" name="total_amount" required></label><br>
+    <label>Payment Method: 
+        <select name="payment_method" required>
+            <option value="Cash">Cash</option>
+            <option value="Yappy">Yappy</option>
+            <option value="Credit Card">Credit Card</option>
+            <option value="Debit Card">Debit Card</option>
+        </select>
+    </label><br>
+    <button type="submit">Add Sale</button>
+</form>
+<hr>
+
+    <!-- SELECT/UPDATE form -->
+    <table border="1">
+        <thead>
+            <tr>
+                <th>saleID</th>
+                <th>Customer</th>
+                <th>Employee</th>
+                <th>Sale Date</th>
+                <th>Subtotal</th>
+                <th>Discount</th>
+                <th>Tax</th>
+                <th>Total Amount</th>
+                <th>Payment Method</th>
+                <th colspan="2">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sale in sales %}
+            <tr>
+                {% if selected_sale and sale.saleID == selected_sale.saleID %}
+                    <form method="POST" action="/update_sale/{{ sale.saleID }}">
+                        <td>{{ sale.saleID }}</td>
+                        <td>
+                            <select name="customer_id" required>
+                                {% for customer in customers %}
+                                    <option value="{{ customer.customerID }}" {% if customer.customerID == selected_sale.customerID %}selected{% endif %}>
+                                        {{ customer.firstName }} {{ customer.lastName }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td>
+                            <select name="employee_id" required>
+                                {% for employee in employees %}
+                                    <option value="{{ employee.employeeID }}" {% if employee.employeeID == selected_sale.employeeID %}selected{% endif %}>
+                                        {{ employee.firstName }} {{ employee.lastName }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td><input type="date" name="sale_date" value="{{ selected_sale.saleDate }}" required></td>
+                        <td><input type="number" step="0.01" name="subtotal" value="{{ selected_sale.subtotal }}" required></td>
+                        <td><input type="number" step="0.01" name="discount" value="{{ selected_sale.discount }}"></td>
+                        <td><input type="number" step="0.01" name="tax" value="{{ selected_sale.tax }}"></td>
+                        <td><input type="number" step="0.01" name="total_amount" value="{{ selected_sale.totalAmount }}" required></td>
+                        <td>
+                            <select name="payment_method" required>
+                                <option value="Cash" {% if selected_sale.paymentMethod == "Cash" %}selected{% endif %}>Cash</option>
+                                <option value="Yappy" {% if selected_sale.paymentMethod == "Yappy" %}selected{% endif %}>Yappy</option>
+                                <option value="Credit Card" {% if selected_sale.paymentMethod == "Credit Card" %}selected{% endif %}>Credit Card</option>
+                                <option value="Debit Card" {% if selected_sale.paymentMethod == "Debit Card" %}selected{% endif %}>Debit Card</option>
+                            </select>
+                        </td>
+                        <td><button type="submit">Submit</button></td>
+                        <td><a href="/sales">Cancel</a></td>
+                    </form>
+                {% else %}
+                    <td>{{ sale.saleID }}</td>
+                    <td>{{ sale.customerName }}</td>
+                    <td>{{ sale.employeeName }}</td>
+                    <td>{{ sale.saleDate }}</td>
+                    <td>{{ sale.subtotal }}</td>
+                    <td>{{ sale.discount }}</td>
+                    <td>{{ sale.tax }}</td>
+                    <td>{{ sale.totalAmount }}</td>
+                    <td>{{ sale.paymentMethod }}</td>
+                    <td><a href="/update_sale/{{ sale.saleID }}">Edit</a></td>
+                    <td><a href="/delete_sale/{{ sale.saleID }}" onclick="return confirm('Are you sure you want to delete this sale?');">Delete</a></td>
+                {% endif %}
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</body>
+{% endblock %}
