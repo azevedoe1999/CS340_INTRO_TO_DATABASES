@@ -10,10 +10,10 @@ import MySQLdb.cursors
 
 app = Flask(__name__)
 
-app.config['MYSQL_HOST'] = 'classmysql.engr.oregonstate.edu'
-app.config['MYSQL_USER'] = 'cs340_azevedoe'
-app.config['MYSQL_PASSWORD'] = '2541'
-app.config['MYSQL_DB'] = 'cs340_azevedoe'
+app.config['MYSQL_HOST'] = '' # Your MySQL host, e.g., 'localhost' or '
+app.config['MYSQL_USER'] = '' # Your MySQL username
+app.config['MYSQL_PASSWORD'] = '' # Your MySQL password
+app.config['MYSQL_DB'] = '' # Your MySQL database name
 app.config['MYSQL_CURSORCLASS'] = "DictCursor"
 
 mysql = MySQL(app)
@@ -91,7 +91,7 @@ def update_customer(customerID):
         return redirect('/customers')
 
     # GET request
-    cursor.execute("SELECT * FROM Customers;")
+    cursor.execute("SELECT * FROM Customers WHERE isActive = 1;")
     customers = cursor.fetchall()
     cursor.execute("SELECT * FROM Customers WHERE customerID = %s;", (customerID,))
     selected_customer = cursor.fetchone()
@@ -123,14 +123,11 @@ def show_sales():
             sale_date = request.form["sale_date"]
             subtotal = float(request.form["subtotal"])
             discount = float(request.form["discount"])
-            tax = float(request.form["tax"])
-            total_amount = float(request.form["total_amount"])
             payment_method = request.form["payment_method"]
 
             cursor.callproc("sp_CreateSale", [
                 customer_id, employee_id, sale_date,
-                subtotal, discount, tax, total_amount,
-                payment_method, None
+                subtotal, discount, payment_method, None
             ])
             mysql.connection.commit()
 
@@ -183,13 +180,11 @@ def update_sale(saleID):
         sale_date = request.form["sale_date"]
         subtotal = float(request.form["subtotal"])
         discount = float(request.form["discount"])
-        tax = float(request.form["tax"])
-        total_amount = float(request.form["total_amount"])
         payment_method = request.form["payment_method"]
 
         cursor.callproc("sp_UpdateSale", [
             saleID, customer_id, employee_id, sale_date,
-            subtotal, discount, tax, total_amount, payment_method
+            subtotal, discount, payment_method
         ])
         mysql.connection.commit()
         cursor.close()
@@ -238,11 +233,51 @@ def update_sale(saleID):
 
 @app.route("/delete_sale/<int:saleID>")
 def delete_sale(saleID):
-    cursor = mysql.connection.cursor()
-    cursor.callproc("sp_DeleteSale", [saleID])
-    mysql.connection.commit()
-    cursor.close()
-    return redirect("/sales")
+    try:
+        cursor = mysql.connection.cursor()
+        cursor.callproc("sp_DeleteSale", [saleID])
+        mysql.connection.commit()
+        cursor.close()
+        return redirect("/sales")
+
+    except Exception as e:
+        error_message = str(e)
+        if "foreign key constraint" in error_message.lower():
+            error_message = "Cannot delete this sale because it is associated with sales products. Delete/edit those sales products first."
+        else:
+            error_message = None
+        print(f"Error executing queries: {e}")
+
+        # Fetch sales and dropdown values again for display
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute("""
+            SELECT
+                s.saleID,
+                CONCAT(c.firstName, ' ', c.lastName) AS customerName,
+                CONCAT(e.firstName, ' ', e.lastName) AS employeeName,
+                s.saleDate,
+                s.subtotal,
+                s.discount,
+                s.tax,
+                s.totalAmount,
+                s.paymentMethod
+            FROM Sales s
+            JOIN Customers c ON s.customerID = c.customerID
+            JOIN Employees e ON s.employeeID = e.employeeID
+            ORDER BY s.saleID ASC;
+        """)
+        sales = cursor.fetchall()
+
+        cursor.execute("SELECT customerID, firstName, lastName FROM Customers WHERE isActive = 1;")
+        customers = cursor.fetchall()
+
+        cursor.execute("SELECT employeeID, firstName, lastName FROM Employees WHERE isActive = 1;")
+        employees = cursor.fetchall()
+        
+        cursor.close()
+
+        # Pass the error message to the template
+        return render_template("sales.html", sales=sales, customers=customers, employees=employees, error=error_message), 400
 
 
 ################################ Employees CRUD Routes
@@ -513,7 +548,7 @@ def show_products():
         CASE WHEN Products.isActive = 1 THEN 'Yes' ELSE 'No' END AS isActive, 
         Categories.categoryName 
         FROM Products
-        JOIN Categories ON Products.categoryID = Categories.categoryID;
+        LEFT JOIN Categories ON Products.categoryID = Categories.categoryID;
         """
 
         cursor.execute(query_fetch)
@@ -601,7 +636,12 @@ def update_product(productID):
             return redirect("/products")
 
         # Fetch all products and selected product
-        cursor.execute("SELECT * FROM Products;")
+        cursor.execute("""
+            SELECT Products.productID, Products.productName, Products.description, Products.price, Products.stockQuantity, 
+            Products.isActive, Products.categoryID, Categories.categoryName
+            FROM Products
+            LEFT JOIN Categories ON Products.categoryID = Categories.categoryID;
+        """)
         product = cursor.fetchall()
         cursor.execute("SELECT * FROM Products WHERE productID = %s;", (productID,))
         selected_product = cursor.fetchone()
@@ -649,8 +689,28 @@ def delete_product(productID):
         return redirect("/products")
 
     except Exception as e:
+        error_message = str(e)
+        if "foreign key constraint" in error_message.lower():
+            error_message = "Cannot delete this product because it is associated with sales in SalesProducts. Delete/edit those sales first."
+        else:
+            error_message = None
         print(f"Error executing queries: {e}")
-        return "An error occurred while executing the database queries.", 500
+
+        # Fetch products and categories again for display
+        cursor.execute("""
+        SELECT Products.productID, Products.productName, Products.description, Products.price, Products.stockQuantity, 
+        CASE WHEN Products.isActive = 1 THEN 'Yes' ELSE 'No' END AS isActive, 
+        Categories.categoryName 
+        FROM Products
+        LEFT JOIN Categories ON Products.categoryID = Categories.categoryID;
+        """)
+        product = cursor.fetchall()
+        cursor.execute("SELECT categoryID, categoryName FROM Categories;")
+        category = cursor.fetchall()
+        cursor.close()
+
+        # Pass the error message to the template
+        return render_template("products.j2", product=product, category=category, error=error_message), 400
 
     finally:
         # Close the DB connection, if it exists
@@ -692,20 +752,32 @@ def show_sales_products():
 
         # Fetch sales_products list
         query_fetch = """
-        SELECT SalesProducts.saleProductID, SalesProducts.saleID, Products.productName, SalesProducts.quantity, SalesProducts.unitPriceAtSale 
+        SELECT 
+            SalesProducts.saleProductID, 
+            SalesProducts.saleID, 
+            CONCAT(Customers.firstName, ' ', Customers.lastName) AS customerName,
+            Sales.saleDate,
+            Sales.totalAmount,
+            Products.productName, 
+            SalesProducts.quantity, 
+            SalesProducts.unitPriceAtSale 
         FROM SalesProducts
+        JOIN Sales ON SalesProducts.saleID = Sales.saleID
+        JOIN Customers ON Sales.customerID = Customers.customerID
         JOIN Products ON SalesProducts.productID = Products.productID
         ORDER BY SalesProducts.saleProductID ASC;
         """
-
+        
         cursor.execute(query_fetch)
         sale_product = cursor.fetchall()
 
         # Fetch all sales for dropdown
         cursor.execute("""
-        SELECT saleID FROM Sales
-        ORDER BY saleID ASC;
-        """)
+            SELECT Sales.saleID, Sales.saleDate, Sales.totalAmount, Customers.firstName, Customers.lastName
+            FROM Sales
+            JOIN Customers ON Sales.customerID = Customers.customerID
+            ORDER BY Sales.saleID ASC;
+            """)
         sales = cursor.fetchall()
 
         # Fetch all products for dropdown
@@ -766,8 +838,18 @@ def update_sale_product(saleProductID):
 
         # Fetch all sales_products and selected sale_product
         query_all = """
-        SELECT SalesProducts.*, Products.productName 
+        SELECT 
+            SalesProducts.saleProductID, 
+            SalesProducts.saleID, 
+            CONCAT(Customers.firstName, ' ', Customers.lastName) AS customerName,
+            Sales.saleDate,
+            Sales.totalAmount,
+            Products.productName, 
+            SalesProducts.quantity, 
+            SalesProducts.unitPriceAtSale 
         FROM SalesProducts
+        JOIN Sales ON SalesProducts.saleID = Sales.saleID
+        JOIN Customers ON Sales.customerID = Customers.customerID
         JOIN Products ON SalesProducts.productID = Products.productID
         ORDER BY SalesProducts.saleProductID ASC;
         """
@@ -784,7 +866,12 @@ def update_sale_product(saleProductID):
         selected_sale_product = cursor.fetchone()
 
         # Fetch sales and products for dropdowns
-        cursor.execute("SELECT saleID FROM Sales;")
+        cursor.execute("""
+            SELECT Sales.saleID, Sales.saleDate, Sales.totalAmount, Customers.firstName, Customers.lastName
+            FROM Sales
+            JOIN Customers ON Sales.customerID = Customers.customerID
+            ORDER BY Sales.saleID ASC;
+        """)
         sales = cursor.fetchall()
         cursor.execute("SELECT productID, productName FROM Products;")
         products = cursor.fetchall()
