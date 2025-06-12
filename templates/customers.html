@@ -26,18 +26,34 @@
     <thead>
         {% if customers %}
         <tr>
-            {% for header in customers[0].keys() %}
-                <th>{{ header }}</th>
-            {% endfor %}
-            <th colspan="2">Actions</th>
+            {% set header_aliases = {
+                'customerID': 'ID',
+                'firstName': 'First Name',
+                'lastName': 'Last Name',
+                'email': 'Email',
+                'phoneNumber': 'Phone',
+                'createdAt': 'Created At'
+            } %}
+            <thead>
+                <tr>
+                    {% for header in customers[0].keys() %}
+                        {% if header != 'isActive' %}
+                            <th>{{ header_aliases[header] }}</th>
+                        {% endif %}
+                    {% endfor %}
+                    <th colspan="2">Actions</th>
+                </tr>
+            </thead>
         </tr>
         {% endif %}
     </thead>
     <tbody>
         {% for customer in customers %}
             <tr>
-                {% for value in customer.values() %}
-                    <td>{{ value }}</td>
+                {% for key, value in customer.items() %}
+                    {% if key != 'isActive' %}
+                        <td>{{ value }}</td>
+                    {% endif %}
                 {% endfor %}
                 <td><a href="/update_customer/{{ customer.customerID }}">Edit</a></td>
                 <td><a href="/delete_customer/{{ customer.customerID }}" onclick="return confirm('Are you sure you want to delete this customer?');">Delete</a></td>

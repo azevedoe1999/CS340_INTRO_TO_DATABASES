@@ -7,6 +7,13 @@
 {% block title %}Products{% endblock %}
 
 {% block content %}
+
+{% if error %}
+    <script>
+        alert({{ error|tojson }});
+    </script>
+{% endif %}
+
 <h1>Products List</h1>
 
 
@@ -15,7 +22,7 @@
     <form class="cuForm" id="add_product" method="POST" action="/products">
         <label>Name: <input type="text" name="product_name" required></label><br>
         <label>Description: <input type="text" name="product_description" required></label><br>
-        <label>Price: <input type="number" name="product_price" required></label><br>
+        <label>Price: <input type="number" name="product_price" step="0.01" required></label><br>
         <label>Quantity: <input type="number" name="product_stockQuantity" required></label><br>
         <label>Is Active: 
             <select name="product_isActive" required>
@@ -38,14 +45,15 @@
     {# SELECT/UPDATE form #}
     <table border="1">
         <thead>
-            {% if product %}
             <tr>
-                {% for header in product[0].keys() %}
-                    <th>{{ 'categoryName' if header == 'categoryID' else header }}</th>
-                {% endfor %}
+                <th>ID</th>
+                <th>Product Name</th>
+                <th>Description</th>
+                <th>Price</th>
+                <th>Stock quantity</th>
+                <th>Category name</th>
                 <th colspan="2">Actions</th>
             </tr>
-            {% endif %}
         </thead>
         <tbody>
             {% for product in product %}
@@ -55,14 +63,8 @@
                             <td>{{ product.productID }}</td> 
                             <td><input type="text" name="product_name" value="{{ product.productName }}" required></td>
                             <td><input type="text" name="product_description" value="{{ product.description }}" required style="width: 300px;"></td>
-                            <td><input type="number" name="product_price" value="{{ product.price }}" required></td>
+                            <td><input type="number" name="product_price" value="{{ product.price }}" step="0.01" required></td>
                             <td><input type="number" name="product_stockQuantity" value="{{ product.stockQuantity }}" required></td>
-                            <td>
-                                <select name="product_isActive" required>
-                                    <option value="1" {% if product.isActive == '1' %}selected{% endif %}>Yes</option>
-                                    <option value="0" {% if product.isActive == '0' %}selected{% endif %}>No</option>
-                                </select>
-                            </td>
                             <td>
                                 <select name="product_categoryID" required>
                                 <option value="" disabled selected>Select a category</option>
@@ -81,12 +83,13 @@
                         <td>{{ product.description }}</td>
                         <td>{{ product.price }}</td>
                         <td>{{ product.stockQuantity }}</td>
-                        <td>{{ 'Yes' if product.isActive == 1 else 'No' }}</td>
                         <td>
-                            {% for category in category %}
-                                {% if category.categoryID == product.categoryID %}
-                                    {{ category.categoryName }}
+                            {% for cat in category %}
+                                {% if cat.categoryID == product.categoryID %}
+                                    {{ cat.categoryName if cat.categoryName else "None" }}
                                 {% endif %}
+                            {% else %}
+                                None
                             {% endfor %}
                         </td>
                         <td><a href="/update_product/{{ product.productID }}">Edit</a></td>

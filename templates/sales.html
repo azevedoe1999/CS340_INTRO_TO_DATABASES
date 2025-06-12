@@ -5,6 +5,13 @@
 {% block content %}
 <h1>Sales List</h1>
 
+{% if error %}
+    <script>
+        // might throw an syntax error; it is fine to ignore it
+        alert({{ error|tojson }});
+    </script>
+{% endif %}
+
 <!-- Add New Sale Form -->
 <h2>Add New Sale</h2>
 <form method="POST" action="/sales">
@@ -29,8 +36,6 @@
     <label>Sale Date: <input type="date" name="sale_date" required></label><br>
     <label>Subtotal: <input type="number" step="0.01" name="subtotal" required></label><br>
     <label>Discount: <input type="number" step="0.01" name="discount"></label><br>
-    <label>Tax: <input type="number" step="0.01" name="tax"></label><br>
-    <label>Total Amount: <input type="number" step="0.01" name="total_amount" required></label><br>
     <label>Payment Method: 
         <select name="payment_method" required>
             <option value="Cash">Cash</option>
@@ -46,7 +51,7 @@
 <table border="1">
     <thead>
         <tr>
-            <th>saleID</th>
+            <th>ID</th>
             <th>Customer</th>
             <th>Employee</th>
             <th>Sale Date</th>
@@ -55,7 +60,7 @@
             <th>Tax</th>
             <th>Total Amount</th>
             <th>Payment Method</th>
-            <th>Actions</th>
+            <th colspan="2">Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -70,10 +75,9 @@
                 <td>{{ sale.tax }}</td>
                 <td>{{ sale.totalAmount }}</td>
                 <td>{{ sale.paymentMethod }}</td>
-                <td>
-                    <a href="/update_sale/{{ sale.saleID }}">Edit</a>
-                    <a href="/delete_sale/{{ sale.saleID }}" onclick="return confirm('Are you sure you want to delete this sale?');">Delete</a>
-                </td>
+                <td><a href="/update_sale/{{ sale.saleID }}">Edit</a></td>
+                <td><a href="/delete_sale/{{ sale.saleID }}" onclick="return confirm('Are you sure you want to delete this sale?');">Delete</a></td>
+                
             </tr>
         {% endfor %}
     </tbody>

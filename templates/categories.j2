@@ -25,11 +25,18 @@
 <hr>
 
 <table border="1">
+    {% set header_aliases = {
+        'categoryID': 'ID',
+        'categoryName': 'Category name',
+        'description': 'Description'
+    } %}
     <thead>
         {% if category %}
         <tr>
             {% for header in category[0].keys() %}
-                <th>{{ header }}</th>
+                {% if header != 'isActive' %}
+                    <th>{{ header_aliases[header] }}</th>
+                {% endif %}
             {% endfor %}
             <th colspan="2">Actions</th>
         </tr>
@@ -38,8 +45,10 @@
     <tbody>
         {% for category in category %}
             <tr>
-                {% for value in category.values() %}
-                    <td>{{ value }}</td>
+                {% for key, value in category.items() %}
+                    {% if key != 'isActive' %}
+                        <td>{{ value }}</td>
+                    {% endif %}
                 {% endfor %}
                 <td><a href="/update_category/{{ category.categoryID }}">Edit</a></td>
                 <td><a href="/delete_category/{{ category.categoryID }}" onclick="return confirm('Are you sure you want to delete this category?');">Delete</a></td>

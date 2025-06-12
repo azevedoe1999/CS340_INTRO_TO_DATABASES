@@ -1,6 +1,7 @@
 {# Citations: #}
 {# Used GitHub Copilot with debugging process like: #}
 {# help fixing an errors in output, how to have edit be within the view table #}
+{# include customer name, sale date, total amount when user selects sales id in add section #}
 
 {% extends "base.html" %}
 
@@ -11,15 +12,18 @@
 
     <h2>Add a SaleProduct</h2>
     <form class="cuForm" id="add_sale_product" method="POST" action="/sales_products">
-        <label>saleID: 
-            <select name="sale_id" required>
+        <label>Sale ID: 
+            <select name="sale_id" id="sale_id_select" required onchange="updateSaleInfo()">
                 <option value="" disabled selected>Select a saleID</option>
                 {% for sale in sales %}
                     <option value="{{ sale.saleID }}">{{ sale.saleID }}</option>
                 {% endfor %}
             </select>
         </label><br>
-        <label>productName: 
+        <div id="sale_info" style="margin-bottom:10px; color: #333;">
+            <!-- Sale info will appear here -->
+        </div>
+        <label>Product Name:
             <select name="product_id" required>
                 <option value="" disabled selected>Select a Product</option>
                 {% for product in products %}
@@ -27,10 +31,37 @@
                 {% endfor %}
             </select>
         </label><br>
-        <label>quantity: <input type="number" name="quantity" required></label><br>
-        <label>unitPriceAtSale: <input type="number" name="unit_price_at_sale" required></label><br>
+        <label>Quantity: <input type="number" name="quantity" required></label><br>
+        <label>Unit Price At Sale: <input type="number" name="unit_price_at_sale" step="0.01" required></label><br>
         <button type="submit">Add SaleProduct</button>
     </form>
+
+    <script>
+        // Prepare a JS object with sale info
+        const salesInfo = {
+            {% for sale in sales %}
+                "{{ sale.saleID }}": {
+                    customer: "{{ sale.firstName }} {{ sale.lastName }}",
+                    saleDate: "{{ sale.saleDate }}",
+                    totalAmount: "{{ sale.totalAmount }}"
+                }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        };
+
+        function updateSaleInfo() {
+            const select = document.getElementById('sale_id_select');
+            const infoDiv = document.getElementById('sale_info');
+            const saleID = select.value;
+            if (salesInfo[saleID]) {
+                infoDiv.innerHTML = 
+                    "<strong>Customer:</strong> " + salesInfo[saleID].customer +
+                    " &nbsp; <strong>Date:</strong> " + salesInfo[saleID].saleDate +
+                    " &nbsp; <strong>Total:</strong> $" + salesInfo[saleID].totalAmount;
+            } else {
+                infoDiv.innerHTML = "";
+            }
+        }
+    </script>
     <hr>
 
     {# SELECT/UPDATE form #}
@@ -38,11 +69,14 @@
         <thead>
             {% if sale_product %}
             <tr>
-                <th>saleProductID</th>
-                <th>saleID</th>
-                <th>productName</th>
-                <th>quantity</th>
-                <th>unitPriceAtSale</th>
+                <th>Sale Product ID</th>
+                <th>Sale ID</th>
+                <th>Customer</th>
+                <th>Date</th>
+                <th>Total</th>
+                <th>Product name</th>
+                <th>Quantity</th>
+                <th>Unit price at sale</th>
                 <th colspan="2">Actions</th> 
             </tr>
             {% endif %}
@@ -61,6 +95,9 @@
                                 {% endfor %}
                             </select>
                         </td>
+                        <td>{{ sale_product.customerName }}</td>
+                        <td>{{ sale_product.saleDate }}</td>
+                        <td>{{ sale_product.totalAmount }}</td>
                         <td>
                             <select name="product_id" form="update-form-{{ sale_product.saleProductID }}" required>
                                 {% for product in products %}
@@ -71,7 +108,7 @@
                             </select>
                         </td>
                         <td><input type="number" name="quantity" form="update-form-{{ sale_product.saleProductID }}" value="{{ sale_product.quantity }}" required></td>
-                        <td><input type="number" name="unit_price_at_sale" form="update-form-{{ sale_product.saleProductID }}" value="{{ sale_product.unitPriceAtSale }}" required></td>
+                        <td><input type="number" name="unit_price_at_sale" form="update-form-{{ sale_product.saleProductID }}" value="{{ sale_product.unitPriceAtSale }}" step="0.01" required></td>
                         <td>
                             <form class="cuForm" id="update-form-{{ sale_product.saleProductID }}" method="POST" action="/update_sale_product/{{ sale_product.saleProductID }}">
                                 <button type="submit" onclick="return confirm('Are you sure you want to submit this sale_product?');">Submit</button>
@@ -85,6 +122,9 @@
                     <tr>
                         <td>{{ sale_product.saleProductID }}</td>
                         <td>{{ sale_product.saleID }}</td>
+                        <td>{{ sale_product.customerName }}</td>
+                        <td>{{ sale_product.saleDate }}</td>
+                        <td>{{ sale_product.totalAmount }}</td>
                         <td>{{ sale_product.productName }}</td>
                         <td>{{ sale_product.quantity }}</td>
                         <td>{{ sale_product.unitPriceAtSale }}</td>

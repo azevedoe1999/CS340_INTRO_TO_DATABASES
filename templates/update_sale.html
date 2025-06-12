@@ -5,6 +5,13 @@
 {% block content %}
 <h1>Sales List</h1>
 
+{% if error %}
+    <script>
+        // might throw an syntax error; it is fine to ignore it
+        alert({{ error|tojson }});  
+    </script>
+{% endif %}
+
  <!-- Add New Sale Form -->
 <h2>Add New Sale</h2>
 <form method="POST" action="/sales">
@@ -29,8 +36,6 @@
     <label>Sale Date: <input type="date" name="sale_date" required></label><br>
     <label>Subtotal: <input type="number" step="0.01" name="subtotal" required></label><br>
     <label>Discount: <input type="number" step="0.01" name="discount"></label><br>
-    <label>Tax: <input type="number" step="0.01" name="tax"></label><br>
-    <label>Total Amount: <input type="number" step="0.01" name="total_amount" required></label><br>
     <label>Payment Method: 
         <select name="payment_method" required>
             <option value="Cash">Cash</option>
@@ -47,7 +52,7 @@
     <table border="1">
         <thead>
             <tr>
-                <th>saleID</th>
+                <th>ID</th>
                 <th>Customer</th>
                 <th>Employee</th>
                 <th>Sale Date</th>
@@ -86,8 +91,8 @@
                         <td><input type="date" name="sale_date" value="{{ selected_sale.saleDate }}" required></td>
                         <td><input type="number" step="0.01" name="subtotal" value="{{ selected_sale.subtotal }}" required></td>
                         <td><input type="number" step="0.01" name="discount" value="{{ selected_sale.discount }}"></td>
-                        <td><input type="number" step="0.01" name="tax" value="{{ selected_sale.tax }}"></td>
-                        <td><input type="number" step="0.01" name="total_amount" value="{{ selected_sale.totalAmount }}" required></td>
+                        <td>{{ sale.tax }}</td>
+                        <td>{{ sale.totalAmount}}</td>
                         <td>
                             <select name="payment_method" required>
                                 <option value="Cash" {% if selected_sale.paymentMethod == "Cash" %}selected{% endif %}>Cash</option>
