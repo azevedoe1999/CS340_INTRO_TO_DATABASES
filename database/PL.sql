@@ -343,12 +343,14 @@ CREATE PROCEDURE sp_CreateSale(
     IN p_saleDate DATE,
     IN p_subtotal DECIMAL(10,2),
     IN p_discount DECIMAL(10,2),
-    IN p_tax DECIMAL(10,2),
-    IN p_totalAmount DECIMAL(10,2),
     IN p_paymentMethod ENUM('Cash', 'Yappy', 'Credit Card', 'Debit Card'),
     OUT p_saleID INT
 )
 BEGIN
+    DECLARE p_tax DECIMAL(10,2);
+    DECLARE p_totalAmount DECIMAL(10,2);
+    SET p_tax = ROUND((p_subtotal - p_discount) * 0.07, 2);
+    SET p_totalAmount = p_subtotal - p_discount + p_tax;
     INSERT INTO Sales (customerID, employeeID, saleDate, subtotal, discount, tax, totalAmount, paymentMethod)
     VALUES (p_customerID, p_employeeID, p_saleDate, p_subtotal, p_discount, p_tax, p_totalAmount, p_paymentMethod);
 
@@ -493,11 +495,13 @@ CREATE PROCEDURE sp_UpdateSale(
     IN p_saleDate DATE,
     IN p_subtotal DECIMAL(10,2),
     IN p_discount DECIMAL(10,2),
-    IN p_tax DECIMAL(10,2),
-    IN p_totalAmount DECIMAL(10,2),
     IN p_paymentMethod ENUM('Cash', 'Yappy', 'Credit Card', 'Debit Card')
 )
 BEGIN
+    DECLARE p_tax DECIMAL(10,2);
+    DECLARE p_totalAmount DECIMAL(10,2);
+    SET p_tax = ROUND((p_subtotal - p_discount) * 0.07, 2);
+    SET p_totalAmount = p_subtotal - p_discount + p_tax;
     UPDATE Sales
     SET customerID = p_customerID,
         employeeID = p_employeeID,

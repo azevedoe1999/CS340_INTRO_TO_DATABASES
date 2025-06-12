@@ -78,9 +78,9 @@ BEGIN
         price DECIMAL(10, 2) NOT NULL,
         stockQuantity INT NOT NULL,
         isActive TINYINT(1),    -- 1 for active, 0 for inactive
-        categoryID INT NOT NULL,    
+        categoryID INT NULL,    
         PRIMARY KEY (productID),
-        FOREIGN KEY (categoryID) REFERENCES Categories(categoryID) ON DELETE RESTRICT
+        FOREIGN KEY (categoryID) REFERENCES Categories(categoryID) ON DELETE SET NULL
     );
 
     -- SalesProducts intersection table
@@ -92,8 +92,8 @@ BEGIN
         quantity INT NOT NULL,
         unitPriceAtSale DECIMAL(10, 2) NOT NULL COMMENT 'Price of the product at the time of sale',
         PRIMARY KEY (saleProductID),
-        FOREIGN KEY (saleID) REFERENCES Sales(saleID) ON DELETE CASCADE,
-        FOREIGN KEY (productID) REFERENCES Products(productID) ON DELETE CASCADE
+        FOREIGN KEY (saleID) REFERENCES Sales(saleID) ON DELETE RESTRICT,
+        FOREIGN KEY (productID) REFERENCES Products(productID) ON DELETE RESTRICT
     );
 
 

@@ -14,15 +14,25 @@ CASE WHEN isActive = 1 THEN 'Yes' ELSE 'No' END AS isActive
 FROM Categories;
 
 -- Query to view Products table
-SELECT Products.productName, Products.description, Products.price, Products.stockQuantity, 
+SELECT Products.productID, Products.productName, Products.description, Products.price, Products.stockQuantity, 
 CASE WHEN Products.isActive = 1 THEN 'Yes' ELSE 'No' END AS isActive, 
 Categories.categoryName 
 FROM Products
-JOIN Categories ON Products.categoryID = Categories.categoryID;
+LEFT JOIN Categories ON Products.categoryID = Categories.categoryID;
 
 -- Query to view SalesProducts table
-SELECT SalesProducts.saleProductID, SalesProducts.saleID, Products.productName, SalesProducts.quantity, SalesProducts.unitPriceAtSale 
+SELECT 
+    SalesProducts.saleProductID, 
+    SalesProducts.saleID, 
+    CONCAT(Customers.firstName, ' ', Customers.lastName) AS customerName,
+    Sales.saleDate,
+    Sales.totalAmount,
+    Products.productName, 
+    SalesProducts.quantity, 
+    SalesProducts.unitPriceAtSale 
 FROM SalesProducts
+JOIN Sales ON SalesProducts.saleID = Sales.saleID
+JOIN Customers ON Sales.customerID = Customers.customerID
 JOIN Products ON SalesProducts.productID = Products.productID
 ORDER BY SalesProducts.saleProductID ASC;
 
@@ -60,11 +70,16 @@ SELECT * FROM Employees;
 SELECT * FROM Employees WHERE employeeID = @employeeID;
 
 -- Query to view sale id in Sales
-SELECT saleID FROM Sales;
+SELECT Sales.saleID, Sales.saleDate, Sales.totalAmount, Customers.firstName, Customers.lastName
+    FROM Sales
+    JOIN Customers ON Sales.customerID = Customers.customerID
+    ORDER BY Sales.saleID ASC;
 
 -- Query to view sale id in Sales in ascending order
-SELECT saleID FROM Sales
-ORDER BY saleID ASC;
+SELECT Sales.saleID, Sales.saleDate, Sales.totalAmount, Customers.firstName, Customers.lastName
+    FROM Sales
+    JOIN Customers ON Sales.customerID = Customers.customerID
+    ORDER BY Sales.saleID ASC;
 
 -- Query to view product id and name in Products
 SELECT productID, productName FROM Products;
